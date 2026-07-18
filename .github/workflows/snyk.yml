@@ -22,6 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: npm install
+
       - name: Run Snyk to check for vulnerable dependencies
         uses: snyk/actions/node@master   # swap for python/, golang/, maven/, gradle/, dotnet/, php/, ruby/
         continue-on-error: true          # let the job continue so SARIF still uploads
@@ -90,6 +93,20 @@ jobs:
         with:
           image: myapp:${{ github.sha }}
           args: --sarif-file-output=snyk-container.sarif
+
+      - name: Patch missing security-severity values in SARIF
+        if: steps.check_dockerfile.outputs.found == 'true'
+        run: |
+          if [ -f "snyk-container.sarif" ]; then
+            jq '.runs[].tool.driver.rules[]?.properties |=
+              (if has("security-severity") and (."security-severity" == null)
+                then ."security-severity" = "0.0"
+                elif (has("security-severity") | not)
+                then . + {"security-severity": "0.0"}
+                else .
+                end)' snyk-container.sarif > snyk-container-fixed.sarif
+            mv snyk-container-fixed.sarif snyk-container.sarif
+          fi
 
       - name: Upload Container results to GitHub Code Scanning
         if: steps.check_dockerfile.outputs.found == 'true'
