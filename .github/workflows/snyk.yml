@@ -65,6 +65,7 @@ jobs:
     # ---------------------------------------------------------------
   # 3. Container image scanning (skips gracefully if no Dockerfile yet)
   # ---------------------------------------------------------------
+
   snyk-container:
     runs-on: ubuntu-latest
     steps:
@@ -98,14 +99,14 @@ jobs:
         if: steps.check_dockerfile.outputs.found == 'true'
         run: |
           if [ -f "snyk-container.sarif" ]; then
-            jq 'walk(
-              if type == "object" and has("security-severity") then
-                (.["security-severity"] as $v |
-                  if ($v|type) == "number" then .
-                  elif ($v|type) == "string" and ($v|test("^[0-9]+(\\.[0-9]+)?$")) then .
-                  else del(.["security-severity"])
-                  end)
-              else . end)' snyk-container.sarif > snyk-container-fixed.sarif
+            echo "Before patch:"
+            grep -o '"security-severity":[^,}]*' snyk-container.sarif | sort -u || true
+ 
+            jq 'del(.. | objects | .["security-severity"]?)' snyk-container.sarif > snyk-container-fixed.sarif
+ 
+            echo "After patch:"
+            grep -o '"security-severity":[^,}]*' snyk-container-fixed.sarif | sort -u || true
+ 
             mv snyk-container-fixed.sarif snyk-container.sarif
           fi
  
@@ -115,7 +116,7 @@ jobs:
         with:
           sarif_file: snyk-container.sarif
           category: snyk-container
- 
+
   # ---------------------------------------------------------------
   # 4. Infrastructure as Code scanning (skips gracefully if no IaC files yet)
   # ---------------------------------------------------------------
