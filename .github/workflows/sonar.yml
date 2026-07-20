@@ -27,9 +27,10 @@ jobs:
 
       # Fetches SonarCloud results via API and generates sonar.sarif
       - name: Generate SARIF from Sonar
-        uses: vmvarela/sonarqube-to-github-sarif@v1
+        uses: vmvarela/sonarqube-sarif@v1
         if: always()
         with:
+          sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           sonar-project-key: herise-ops_test-devsecops
           output-file: sonar.sarif
