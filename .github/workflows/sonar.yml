@@ -32,7 +32,7 @@ jobs:
         with:
           sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
-          sonar-project-key: herise-ops_test-devsecops
+          project-key: herise-ops_test-devsecops
           output-file: sonar.sarif
 
       - name: Upload SARIF report to GitHub Security
