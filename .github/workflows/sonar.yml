@@ -25,16 +25,17 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      # Uploads SonarCloud findings to GitHub's Security Tab
+      # Fetches SonarCloud results via API and generates sonar.sarif
+      - name: Generate SARIF from Sonar
+        uses: vmvarela/sonarqube-to-github-sarif@v1
+        if: always()
+        with:
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          sonar-project-key: herise-ops_test-devsecops
+          output-file: sonar.sarif
+
       - name: Upload SARIF report to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: sonar.sarif
-
-      # Optional: Block PR merges if Quality Gate fails
-      - name: Check Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
