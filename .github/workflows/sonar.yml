@@ -6,25 +6,31 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+
 permissions:
+  security-events: write  # Allows SARIF upload to the Security tab
   contents: read
 
 jobs:
   sonarqube:
-    name: SonarQube Scan
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Shallow clones must be disabled for accurate blame info & PR checks
+          fetch-depth: 0
 
-      - name: SonarQube Scan
+      - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v3
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      # Uploads SonarCloud findings to GitHub's Security Tab
+      - name: Upload SARIF report to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: sonar.sarif
 
       # Optional: Block PR merges if Quality Gate fails
       - name: Check Quality Gate
