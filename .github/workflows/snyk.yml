@@ -27,13 +27,20 @@ jobs:
 
       - name: Run Snyk to check for vulnerable dependencies
         uses: snyk/actions/node@master   # swap for python/, golang/, maven/, gradle/, dotnet/, php/, ruby/
-        continue-on-error: true          # let the job continue so SARIF still uploads
+        
+        # DEV GATE: continue-on-error removed intentionally. A High/Critical
+        # finding (per --severity-threshold below) now fails this job,
+        # which — once required in branch protection — blocks the PR merge.
+        
+        # continue-on-error: true          # let the job continue so SARIF still uploads
+        
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --sarif-file-output=snyk-sca.sarif --severity-threshold=high
 
       - name: Upload SCA results to GitHub Code Scanning
+        if: always()   # upload findings even when the scan step above fails the job
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-sca.sarif
@@ -49,7 +56,10 @@ jobs:
 
       - name: Run Snyk Code
         uses: snyk/actions/node@master
-        continue-on-error: true
+        # DEV GATE: continue-on-error removed intentionally — same reasoning as the SCA job above.
+        
+        # continue-on-error: true
+        
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -57,6 +67,8 @@ jobs:
           args: --sarif-file-output=snyk-code.sarif
 
       - name: Upload Code results to GitHub Code Scanning
+        if: always()   # upload findings even when the scan step above fails the job
+        
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
